@@ -14,10 +14,10 @@ func TestJoinLatest(t *testing.T) {
 		{ID: 1, DeviceName: "core-rtr-01", IPAddress: "10.0.0.1", OID: "1.3.6.1.2", MetricName: "CPU", Unit: "%"},
 		{ID: 2, DeviceName: "core-rtr-01", IPAddress: "10.0.0.1", OID: "1.3.6.1.3", MetricName: "Temp", Unit: "C"},
 	}
-	points := map[string]models.MetricPoint{
-		models.MetricKey("10.0.0.1", "CPU"): {Value: 37.5, Time: polled},
+	points := map[uint64]models.MetricPoint{
+		1: {TargetID: 1, Value: 37.5, Time: polled},
 		// stale series for a target that is gone / inactive
-		models.MetricKey("10.9.9.9", "CPU"): {Value: 99, Time: polled},
+		99: {TargetID: 99, Value: 99, Time: polled},
 	}
 
 	got := joinLatest(targets, points)
@@ -52,9 +52,9 @@ func TestJoinLatestAliasing(t *testing.T) {
 		{ID: 1, IPAddress: "10.0.0.1", MetricName: "CPU"},
 		{ID: 2, IPAddress: "10.0.0.2", MetricName: "CPU"},
 	}
-	points := map[string]models.MetricPoint{
-		models.MetricKey("10.0.0.1", "CPU"): {Value: 1},
-		models.MetricKey("10.0.0.2", "CPU"): {Value: 2},
+	points := map[uint64]models.MetricPoint{
+		1: {TargetID: 1, Value: 1},
+		2: {TargetID: 2, Value: 2},
 	}
 
 	got := joinLatest(targets, points)

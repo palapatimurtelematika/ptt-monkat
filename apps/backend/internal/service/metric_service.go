@@ -37,7 +37,7 @@ func (s *MetricService) Latest(ctx context.Context) ([]models.LatestMetric, erro
 // joinLatest is kept free of DB handles so it is testable without mocks.
 // MariaDB drives the result: a point with no matching active target is dropped
 // (decommissioned device), a target with no point keeps nil value/timestamp.
-func joinLatest(targets []models.SnmpTarget, points map[string]models.MetricPoint) []models.LatestMetric {
+func joinLatest(targets []models.SnmpTarget, points map[uint64]models.MetricPoint) []models.LatestMetric {
 	out := make([]models.LatestMetric, 0, len(targets))
 
 	for _, t := range targets {
@@ -50,7 +50,7 @@ func joinLatest(targets []models.SnmpTarget, points map[string]models.MetricPoin
 			Unit:       t.Unit,
 		}
 
-		if p, ok := points[models.MetricKey(t.IPAddress, t.MetricName)]; ok {
+		if p, ok := points[t.ID]; ok {
 			value, ts := p.Value, p.Time
 			row.Value = &value
 			row.Timestamp = &ts
