@@ -6,6 +6,14 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
+    /* Freshness channel. Silent is grey, not red: in a NOC red means a device
+       alarm, and "never polled" is a configuration state. Red is reserved for
+       the dashboard failing to reach the API. */
+    --color-state-live: var(--state-live);
+    --color-state-stale: var(--state-stale);
+    --color-state-silent: var(--state-silent);
+    --color-state-fault: var(--state-fault);
+
     --font-heading: var(--font-sans);
     --font-sans: 'Geist Variable', sans-serif;
     --color-sidebar-ring: var(--sidebar-ring);
@@ -81,6 +89,11 @@
     --sidebar-accent-foreground: oklch(0.205 0 0);
     --sidebar-border: oklch(0.922 0 0);
     --sidebar-ring: oklch(0.708 0 0);
+
+    --state-live: oklch(0.62 0.11 185);
+    --state-stale: oklch(0.68 0.13 75);
+    --state-silent: oklch(0.72 0.01 250);
+    --state-fault: oklch(0.58 0.19 25);
 }
 
 .dark {
@@ -115,6 +128,11 @@
     --sidebar-accent-foreground: oklch(0.985 0 0);
     --sidebar-border: oklch(1 0 0 / 10%);
     --sidebar-ring: oklch(0.556 0 0);
+
+    --state-live: oklch(0.72 0.12 185);
+    --state-stale: oklch(0.76 0.14 75);
+    --state-silent: oklch(0.48 0.01 250);
+    --state-fault: oklch(0.65 0.19 25);
 }
 
 @layer base {
@@ -127,4 +145,10 @@
   html {
     @apply font-sans;
     }
+}
+
+/* Readings refresh every 60s. Proportional digits make the numbers shift
+   sideways on each update; tabular ones hold their column. */
+.tabular {
+  font-variant-numeric: tabular-nums;
 }
