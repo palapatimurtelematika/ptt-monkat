@@ -13,6 +13,7 @@ import (
 	"github.com/ujangdoubleday/ptt-monkat/apps/backend/internal/config"
 	"github.com/ujangdoubleday/ptt-monkat/apps/backend/internal/database"
 	"github.com/ujangdoubleday/ptt-monkat/apps/backend/internal/handler"
+	"github.com/ujangdoubleday/ptt-monkat/apps/backend/internal/poller"
 	"github.com/ujangdoubleday/ptt-monkat/apps/backend/internal/repository"
 	"github.com/ujangdoubleday/ptt-monkat/apps/backend/internal/router"
 	"github.com/ujangdoubleday/ptt-monkat/apps/backend/internal/service"
@@ -32,17 +33,21 @@ func main() {
 	}
 	defer influx.Close()
 
-	metricSvc := service.NewMetricService(
-		repository.NewTargetRepository(db),
-		repository.NewMetricRepository(influx, cfg.InfluxOrg, cfg.InfluxBucket),
-	)
+	targetRepo := repository.NewTargetRepository(db)
+	metricRepo := repository.NewMetricRepository(influx, cfg.InfluxOrg, cfg.InfluxBucket)
+
+	// Background SNMP poller, in-process alongside the API.
+	pollCtx, stopPoll := context.WithCancel(context.Background())
+	defer stopPoll()
+	snmpPoller := poller.New(targetRepo, metricRepo, cfg)
+	go snmpPoller.Run(pollCtx)
 
 	app := fiber.New(fiber.Config{AppName: "ptt-monkat api"})
 	app.Use(logger.New())
-	router.Register(app, handler.NewMetricHandler(metricSvc))
+	router.Register(app, handler.NewMetricHandler(service.NewMetricService(targetRepo, metricRepo)))
 
-	// Listen off the main goroutine so the deferred Close above actually runs
-	// on Ctrl-C — log.Fatal(app.Listen(...)) would skip every deferred flush.
+	// Listen off the main goroutine so the defers above actually run on
+	// Ctrl-C — log.Fatal(app.Listen(...)) would skip every deferred flush.
 	go func() {
 		if err := app.Listen(":" + cfg.APIPort); err != nil {
 			log.Fatalf("listen: %v", err)
@@ -55,6 +60,12 @@ func main() {
 	<-ctx.Done()
 
 	log.Println("shutting down")
+
+	// Stop the poller and wait for its flush before the deferred
+	// influx.Close() pulls the write client out from under it.
+	stopPoll()
+	snmpPoller.Wait(10 * time.Second)
+
 	if err := app.ShutdownWithTimeout(5 * time.Second); err != nil {
 		log.Printf("shutdown: %v", err)
 	}

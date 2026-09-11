@@ -2,6 +2,8 @@ package config
 
 import (
 	"os"
+	"strconv"
+	"time"
 
 	"github.com/joho/godotenv"
 )
@@ -13,6 +15,13 @@ type Config struct {
 	InfluxToken  string
 	InfluxOrg    string
 	InfluxBucket string
+
+	// Poller. SNMPTimeout*(1+SNMPRetries) must stay well under PollInterval
+	// so a slow tick cannot overrun the next one.
+	PollInterval    time.Duration
+	PollConcurrency int
+	SNMPTimeout     time.Duration
+	SNMPRetries     int
 }
 
 // Load reads .env (if present) then the environment. Missing vars fall back to
@@ -27,12 +36,31 @@ func Load() Config {
 		InfluxToken:  env("INFLUX_TOKEN", ""),
 		InfluxOrg:    env("INFLUX_ORG", "ptt"),
 		InfluxBucket: env("INFLUX_BUCKET", "snmp_metrics"),
+
+		PollInterval:    envDuration("POLL_INTERVAL", time.Minute),
+		PollConcurrency: envInt("POLL_CONCURRENCY", 50),
+		SNMPTimeout:     envDuration("SNMP_TIMEOUT", 2*time.Second),
+		SNMPRetries:     envInt("SNMP_RETRIES", 1),
 	}
 }
 
 func env(key, fallback string) string {
 	if v := os.Getenv(key); v != "" {
 		return v
+	}
+	return fallback
+}
+
+func envDuration(key string, fallback time.Duration) time.Duration {
+	if d, err := time.ParseDuration(os.Getenv(key)); err == nil && d > 0 {
+		return d
+	}
+	return fallback
+}
+
+func envInt(key string, fallback int) int {
+	if n, err := strconv.Atoi(os.Getenv(key)); err == nil && n > 0 {
+		return n
 	}
 	return fallback
 }
