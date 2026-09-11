@@ -44,6 +44,14 @@ services:
       timeout: 5s
       retries: 10
 
+  # A real SNMP agent to poll during development. Not part of the system —
+  # it stands in for the routers/UPS/DWDM gear the poller talks to in prod.
+  snmpd:
+    image: polinux/snmpd
+    restart: unless-stopped
+    ports:
+      - "1161:161/udp"
+
 volumes:
   mariadb_data:
   influx_data:
