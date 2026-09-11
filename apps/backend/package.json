@@ -1,0 +1,10 @@
+{
+  "name": "backend",
+  "private": true,
+  "version": "0.0.0",
+  "scripts": {
+    "dev": "air",
+    "build": "go build -o bin/api ./cmd/api && go build -o bin/poller ./cmd/poller",
+    "test": "go test ./..."
+  }
+}
