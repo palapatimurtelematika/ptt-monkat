@@ -1,0 +1,49 @@
+# Dev datastores for ptt-monkat. Credentials here are dev-only and match
+# apps/backend/.env.example — production values come from the real environment.
+services:
+  mariadb:
+    image: mariadb:11
+    restart: unless-stopped
+    environment:
+      MARIADB_ROOT_PASSWORD: root
+      MARIADB_DATABASE: ptt_monkat
+      MARIADB_USER: monkat
+      MARIADB_PASSWORD: changeme
+    ports:
+      # 3307 on the host: 3306 is already taken by a pre-existing MariaDB
+      - "3307:3306"
+    volumes:
+      # runs once on an empty data dir
+      - ./db/001_mariadb_init.sql:/docker-entrypoint-initdb.d/001_init.sql:ro
+      - mariadb_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  influxdb:
+    image: influxdb:2.7
+    restart: unless-stopped
+    environment:
+      DOCKER_INFLUXDB_INIT_MODE: setup
+      DOCKER_INFLUXDB_INIT_USERNAME: admin
+      DOCKER_INFLUXDB_INIT_PASSWORD: changeme123
+      DOCKER_INFLUXDB_INIT_ORG: ptt
+      DOCKER_INFLUXDB_INIT_BUCKET: snmp_metrics
+      DOCKER_INFLUXDB_INIT_RETENTION: 90d
+      DOCKER_INFLUXDB_INIT_ADMIN_TOKEN: dev-token-ptt-monkat
+    ports:
+      # 8087 on the host: 8086 is already taken by a pre-existing influxd
+      - "8087:8086"
+    volumes:
+      - influx_data:/var/lib/influxdb2
+    healthcheck:
+      test: ["CMD", "influx", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  mariadb_data:
+  influx_data:
