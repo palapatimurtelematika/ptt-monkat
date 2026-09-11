@@ -2,22 +2,27 @@ package models
 
 import "time"
 
-// Influx schema constants — see db/influx_setup.md. Shared by the reader here
-// and by the stage 3 writer so the two cannot drift.
+// Influx schema constants — see db/influx_setup.md. Shared by the poller's
+// writer and the API's reader so the two cannot drift.
+//
+// The measurement is the target's metric_name (CPU, Temp, RxPower, ...), so
+// there is no fixed measurement constant. target_id is the join key back to
+// MariaDB: it is the primary key, so renaming or re-IPing a device does not
+// orphan its history.
 const (
-	MeasurementSNMP = "snmp"
-	FieldValue      = "value"
+	FieldValue = "value"
 
+	TagTargetID   = "target_id"
 	TagDeviceName = "device_name"
 	TagIPAddress  = "ip_address"
-	TagMetricName = "metric_name"
 	TagUnit       = "unit"
 )
 
-// MetricPoint is the generic InfluxDB payload: measurement "snmp", tags
-// identifying the device and metric, one float field "value".
-// Device-type-agnostic by design — a UPS and a DWDM shelf produce this shape.
+// MetricPoint is the generic InfluxDB payload: one float reading for one
+// target. Device-type-agnostic by design — a UPS and a DWDM shelf produce
+// this shape, differing only by the rows in snmp_targets.
 type MetricPoint struct {
+	TargetID   uint64
 	DeviceName string
 	IPAddress  string
 	MetricName string
@@ -40,7 +45,3 @@ type LatestMetric struct {
 	Value      *float64   `json:"value"`
 	Timestamp  *time.Time `json:"timestamp"`
 }
-
-// MetricKey joins the two stores. (ip_address, metric_name) is the only pair
-// present on both sides — the OID lives in MariaDB alone.
-func MetricKey(ip, metric string) string { return ip + "|" + metric }
