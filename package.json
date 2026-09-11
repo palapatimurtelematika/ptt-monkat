@@ -1,0 +1,16 @@
+{
+  "name": "ptt-monkat",
+  "private": true,
+  "workspaces": [
+    "apps/*"
+  ],
+  "scripts": {
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "lint": "turbo run lint"
+  },
+  "packageManager": "npm@10.9.7",
+  "devDependencies": {
+    "turbo": "^2.10.12"
+  }
+}
