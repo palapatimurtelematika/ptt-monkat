@@ -22,8 +22,8 @@ func Load() Config {
 
 	return Config{
 		APIPort:      env("API_PORT", "3000"),
-		MariaDBDSN:   env("MARIADB_DSN", "monkat:changeme@tcp(127.0.0.1:3306)/ptt_monkat?parseTime=true&charset=utf8mb4"),
-		InfluxURL:    env("INFLUX_URL", "http://127.0.0.1:8086"),
+		MariaDBDSN:   env("MARIADB_DSN", "monkat:changeme@tcp(127.0.0.1:3307)/ptt_monkat?parseTime=true&charset=utf8mb4"),
+		InfluxURL:    env("INFLUX_URL", "http://127.0.0.1:8087"),
 		InfluxToken:  env("INFLUX_TOKEN", ""),
 		InfluxOrg:    env("INFLUX_ORG", "ptt"),
 		InfluxBucket: env("INFLUX_BUCKET", "snmp_metrics"),
